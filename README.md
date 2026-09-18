@@ -511,13 +511,65 @@ Interactive OpenAPI documentation is accessible at `http://localhost:8000/docs` 
 * **Python:** Version 3.12 or higher (pinned via `backend/.python-version`; `backend/pyproject.toml` requires `>=3.12`)
 * **Node.js:** Version 18 or higher (with `npm`)
 
-### 1. Install Backend Dependencies
+### 1. Create a Python Virtual Environment
+
+Using Python's built-in `venv`:
+
 ```bash
 cd backend
+python -m venv .venv
+```
+
+Activate the virtual environment on Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+Activate the virtual environment on Linux/macOS:
+
+```bash
+source .venv/bin/activate
+```
+
+### Alternative: Using uv
+
+If `uv` is installed, create the virtual environment with:
+
+```bash
+cd backend
+uv venv
+```
+
+Activate it on Windows:
+
+```bash
+.venv\Scripts\activate
+```
+
+Activate it on Linux/macOS:
+
+```bash
+source .venv/bin/activate
+```
+
+Then install the backend dependencies using either the existing `pip` method or the `uv` method.
+
+### 2. Install Backend Dependencies
+
+**Using pip:**
+
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Install Frontend Dependencies
+**Using uv:**
+
+```bash
+uv pip install -r requirements.txt
+```
+
+### 3. Install Frontend Dependencies
 ```bash
 cd ../frontend
 npm install
