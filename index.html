@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APEX Microgrid EMS & SCADA Controller Portal</title>
+  <meta name="description" content="APEX industrial-grade Hybrid Energy Management System (EMS) and SCADA platform for microgrid power flow monitoring, alarm logging, and AI optimization." />
+  <link rel="stylesheet" href="index.css">
+  <!-- Chart.js CDN for live trends -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- 1. TOP HEADER STATUS BAR -->
+  <header>
+    <div class="logo-section">
+      <div class="logo-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+      </div>
+      <div>
+        <h1>APEX Microgrid EMS & SCADA <span class="version-tag">v2.1</span></h1>
+        <p style="font-size: 0.65rem; color: var(--text-secondary);">Supervisory Dispatch & Control Center</p>
+      </div>
+    </div>
+
+    <div class="header-meta">
+      <div class="meta-badge">MODE: <span id="mode-badge">NORMAL (SIM)</span></div>
+      <div class="meta-badge">TIME: <span id="time-badge">12:00</span></div>
+      <div class="meta-badge">TARIFF: <span id="tariff-badge">$0.12/kWh</span></div>
+      <div class="status-indicator" id="conn-badge">
+        <span class="status-dot"></span>
+        <span id="conn-status-text">LOCAL SIMULATOR</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- TAB NAVIGATION BAR -->
+  <div class="nav-tabs-container">
+    <button class="nav-tab active" data-tab="dashboard" onclick="switchNavTab('dashboard')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+      Dashboard
+    </button>
+    <button class="nav-tab" data-tab="data-sources" onclick="switchNavTab('data-sources')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v6c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><path d="M3 11v6c0 1.66 4 3 9 3s9-1.34 9-3v-6"></path></svg>
+      Data Sources
+    </button>
+    <button class="nav-tab" data-tab="live-display" onclick="switchNavTab('live-display')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="2" y1="14" x2="6" y2="14"></line><line x1="10" y1="8" x2="14" y2="8"></line><line x1="18" y1="16" x2="22" y2="16"></line></svg>
+      Live Display
+    </button>
+  </div>
+
+  <div id="tab-dashboard" class="tab-content active-tab-content">
+  <!-- 2. SYNOPTIC FLOW SCHEMATIC (LIVE HMI PATHS) -->
+  <section class="card hmi-section">
+    <div class="card-title">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--emerald);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      Synoptic Power Flow Schematic
+    </div>
+    
+    <div class="hmi-container">
+      <svg width="850" height="260" viewBox="0 0 850 260" class="w-full">
+        <!-- Gradients -->
+        <defs>
+          <linearGradient id="solarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#eab308" />
+            <stop offset="100%" stop-color="#ca8a04" />
+          </linearGradient>
+          <linearGradient id="windGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#a855f7" />
+            <stop offset="100%" stop-color="#7e22ce" />
+          </linearGradient>
+          <linearGradient id="battGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#10b981" />
+            <stop offset="100%" stop-color="#047857" />
+          </linearGradient>
+          <linearGradient id="gridGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#3b82f6" />
+            <stop offset="100%" stop-color="#1d4ed8" />
+          </linearGradient>
+          <linearGradient id="loadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f43f5e" />
+            <stop offset="100%" stop-color="#be123c" />
+          </linearGradient>
+          <linearGradient id="invGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f8fafc" />
+            <stop offset="100%" stop-color="#cbd5e1" />
+          </linearGradient>
+        </defs>
+
+        <!-- FLOW LINES -->
+        <!-- Solar PV to Inverter -->
+        <path d="M 120 70 L 320 70 L 320 130 L 380 130" fill="none" stroke="#ca8a04" stroke-width="2.5" />
+        <path id="flow-solar" d="M 120 70 L 320 70 L 320 130 L 380 130" fill="none" stroke="#fef08a" stroke-width="2.5" class="flow-line inactive" />
+
+        <!-- Wind to Inverter -->
+        <path d="M 120 190 L 320 190 L 320 130 L 380 130" fill="none" stroke="#7e22ce" stroke-width="2.5" />
+        <path id="flow-wind" d="M 120 190 L 320 190 L 320 130 L 380 130" fill="none" stroke="#f3e8ff" stroke-width="2.5" class="flow-line inactive" />
+
+        <!-- Battery to Inverter -->
+        <path d="M 425 210 L 425 170" fill="none" stroke="#047857" stroke-width="2.5" />
+        <path id="flow-battery" d="M 425 210 L 425 170" fill="none" stroke="#a7f3d0" stroke-width="2.5" class="flow-line inactive" />
+
+        <!-- Inverter to Grid -->
+        <path d="M 470 130 L 680 130 L 680 70 L 730 70" fill="none" stroke="#1d4ed8" stroke-width="2.5" />
+        <path id="flow-grid" d="M 470 130 L 680 130 L 680 70 L 730 70" fill="none" stroke="#bfdbfe" stroke-width="2.5" class="flow-line inactive" />
+
+        <!-- Inverter to Load -->
+        <path d="M 470 130 L 680 130 L 680 190 L 730 190" fill="none" stroke="#be123c" stroke-width="2.5" />
+        <path id="flow-load" d="M 470 130 L 680 130 L 680 190 L 730 190" fill="none" stroke="#fecdd3" stroke-width="2.5" class="flow-line inactive" />
+
+        <!-- NODES -->
+        <!-- Solar PV Node -->
+        <g class="hmi-node solar-node" onclick="openFaceplate('solar')" transform="translate(40, 30)">
+          <rect width="90" height="70" rx="8" fill="url(#solarGrad)" />
+          <text x="45" y="24" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">SOLAR PV</text>
+          <text id="node-solar-power" x="45" y="46" fill="#fff" font-size="12" font-weight="bold" font-family="monospace" text-anchor="middle">0.0 kW</text>
+          <text id="node-solar-meta" x="45" y="58" fill="#fef08a" font-size="8" font-family="monospace" text-anchor="middle">0V / 0A</text>
+        </g>
+
+        <!-- Wind Turbine Node -->
+        <g class="hmi-node wind-node" onclick="openFaceplate('wind')" transform="translate(40, 150)">
+          <rect width="90" height="70" rx="8" fill="url(#windGrad)" />
+          <text x="45" y="24" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">WIND GEN</text>
+          <text id="node-wind-power" x="45" y="46" fill="#fff" font-size="12" font-weight="bold" font-family="monospace" text-anchor="middle">0.0 kW</text>
+          <text id="node-wind-meta" x="45" y="58" fill="#e9d5ff" font-size="8" font-family="monospace" text-anchor="middle">0 m/s</text>
+        </g>
+
+        <!-- Hybrid Inverter Node (Center PCS Gateway) -->
+        <g class="hmi-node inverter-node" onclick="openFaceplate('inverter')" transform="translate(370, 95)">
+          <rect width="110" height="75" rx="10" fill="url(#invGrad)" stroke="#475569" stroke-width="1.5" />
+          <text x="55" y="22" fill="#0f172a" font-size="10" font-weight="bold" text-anchor="middle">HYBRID PCS</text>
+          <text id="node-pcs-power" x="55" y="42" fill="#0f172a" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">0.0 kW</text>
+          <text id="node-pcs-eff" x="55" y="54" fill="#475569" font-size="8" font-family="monospace" text-anchor="middle">Eff: 98.5%</text>
+          <text id="node-pcs-status" x="55" y="64" fill="#059669" font-size="8" font-weight="bold" font-family="monospace" text-anchor="middle">RUNNING</text>
+        </g>
+
+        <!-- BESS Battery Storage Node -->
+        <g class="hmi-node battery-node" onclick="openFaceplate('battery')" transform="translate(370, 205)">
+          <rect width="110" height="50" rx="8" fill="url(#battGrad)" />
+          <text x="55" y="18" fill="#fff" font-size="9" font-weight="bold" text-anchor="middle">BESS (BATTERY)</text>
+          <text id="node-battery-soc" x="24" y="38" fill="#fff" font-size="13" font-weight="bold" font-family="monospace">50%</text>
+          <text id="node-battery-current" x="58" y="38" fill="#a7f3d0" font-size="8" font-family="monospace">0.0 A</text>
+          <text id="node-battery-soh" x="90" y="38" fill="#a7f3d0" font-size="8" font-family="monospace">S:99%</text>
+        </g>
+
+        <!-- Utility Grid Node -->
+        <g class="hmi-node grid-node" onclick="openFaceplate('grid')" transform="translate(730, 30)">
+          <rect width="90" height="70" rx="8" fill="url(#gridGrad)" />
+          <text x="45" y="24" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">UTILITY GRID</text>
+          <text id="node-grid-power" x="45" y="46" fill="#fff" font-size="12" font-weight="bold" font-family="monospace" text-anchor="middle">0.0 kW</text>
+          <text id="node-grid-meta" x="45" y="58" fill="#bfdbfe" font-size="8" font-family="monospace" text-anchor="middle">400V / 50Hz</text>
+        </g>
+
+        <!-- Microgrid Load Demand Node -->
+        <g class="hmi-node load-node" onclick="openFaceplate('load')" transform="translate(730, 150)">
+          <rect width="90" height="70" rx="8" fill="url(#loadGrad)" />
+          <text x="45" y="24" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">LOAD DEMAND</text>
+          <text id="node-load-power" x="45" y="46" fill="#fff" font-size="12" font-weight="bold" font-family="monospace" text-anchor="middle">0.0 kW</text>
+          <text id="node-load-meta" x="45" y="58" fill="#fecdd3" font-size="8" font-family="monospace" text-anchor="middle">230V / 0A</text>
+        </g>
+
+        <!-- EMS Decision Action badge -->
+        <g transform="translate(315, 10)">
+          <rect width="220" height="30" rx="15" fill="rgba(30, 41, 59, 0.9)" stroke="#10b981" stroke-width="1.5" />
+          <text id="node-ems-action" x="110" y="19" fill="#10b981" font-size="10" font-weight="bold" text-anchor="middle">
+            EMS: STANDBY
+          </text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- 3. LIVE SCADA TELEMETRY TAG METERS -->
+  <section class="telemetry-grid">
+    
+    <div class="telemetry-item">
+      <div class="tag-label">
+        <span class="status-dot" style="background-color: var(--yellow); box-shadow: 0 0 6px var(--yellow);"></span> Solar Output
+      </div>
+      <div class="tag-value"><span id="tag-solar-power">0.00</span> <span>kW</span></div>
+      <div class="tag-subtext" id="tag-solar-temp">25.0°C Panel</div>
+    </div>
+
+    <div class="telemetry-item">
+      <div class="tag-label">
+        <span class="status-dot" style="background-color: var(--purple); box-shadow: 0 0 6px var(--purple);"></span> Wind Output
+      </div>
+      <div class="tag-value"><span id="tag-wind-power">0.00</span> <span>kW</span></div>
+      <div class="tag-subtext" id="tag-wind-rpm">0 RPM</div>
+    </div>
+
+    <div class="telemetry-item">
+      <div class="tag-label">
+        <span class="status-dot" style="background-color: var(--emerald); box-shadow: 0 0 6px var(--emerald);"></span> BESS Battery
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+        <div class="battery-tank">
+          <div class="battery-cap"></div>
+          <div class="battery-fill" id="tag-battery-fill" style="height: 50%;"></div>
+        </div>
+        <div>
+          <div class="tag-value" style="font-size: 1.25rem; margin: 0;"><span id="tag-battery-soc">50.0</span><span>%</span></div>
+          <span style="font-size: 0.65rem; color: var(--text-secondary);" id="tag-battery-soh">SOH: 100%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="telemetry-item">
+      <div class="tag-label">
+        <span class="status-dot" id="tag-grid-dot"></span> Grid Power
+      </div>
+      <div class="tag-value"><span id="tag-grid-power">0.00</span> <span>kW</span></div>
+      <div class="tag-subtext" id="tag-grid-voltage">400.0V / 50.0Hz</div>
+    </div>
+
+    <div class="telemetry-item">
+      <div class="tag-label">
+        <span class="status-dot" style="background-color: var(--rose); box-shadow: 0 0 6px var(--rose);"></span> Load Demand
+      </div>
+      <div class="tag-value"><span id="tag-load-power">0.00</span> <span>kW</span></div>
+      <div class="tag-subtext" id="tag-load-current">230.0V / 0.0A</div>
+    </div>
+
+    <div class="telemetry-item">
+      <div class="tag-label">
+        <span class="status-dot" style="background-color: var(--text-primary); box-shadow: 0 0 6px var(--text-primary);"></span> PCS Output
+      </div>
+      <div class="tag-value"><span id="tag-pcs-power">0.00</span> <span>kW</span></div>
+      <div class="tag-subtext" id="tag-pcs-status">RUNNING (98.5%)</div>
+    </div>
+
+  </section>
+
+  <!-- 4. CONTROLLER PANELS, ALARMS, & DATASET UPLOADS -->
+  <main class="main-grid">
+    
+    <!-- COLUMN 1: ALARMS CENTER -->
+    <section class="card">
+      <div class="card-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--rose);"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        Active SCADA Alarms (<span id="alarm-count-badge">0</span>)
+      </div>
+      
+      <div class="alarm-list" id="active-alarms-container">
+        <div class="empty-alarm-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #475569; margin-bottom: 8px;"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          No active alarms detected. System status nominal.
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUMN 2: SUPERVISORY COMMAND & SIMULATION -->
+    <section class="card">
+      <div class="card-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--amber);"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="2" y1="14" x2="6" y2="14"></line><line x1="10" y1="8" x2="14" y2="8"></line><line x1="18" y1="16" x2="22" y2="16"></line></svg>
+        Simulation Command Override Panel
+      </div>
+
+      <div class="form-group">
+        <label for="simulation-scenario">Simulated Scenario</label>
+        <select id="simulation-scenario">
+          <option value="NORMAL">Normal Automatic Dispatch</option>
+          <option value="HIGH_RENEWABLES">High Renewable Generation Mode</option>
+          <option value="LOW_RENEWABLES">Low Renewable Generation Mode</option>
+          <option value="GRID_OUTAGE">Simulate Grid Outage (Islanding)</option>
+          <option value="PEAK_LOAD">Simulate Industrial Load Spike</option>
+          <option value="FAULT">Simulate Inverter Breaker Fault</option>
+          <option value="REPLAY">Historical Dataset Replay</option>
+        </select>
+      </div>
+
+      <div style="border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 12px; margin-top: 12px;">
+        <p style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">Manual Value Injections</p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
+          <div class="form-group" style="margin: 0;">
+            <label>Solar PV (kW)</label>
+            <input type="number" id="override-solar" placeholder="Auto">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Wind (kW)</label>
+            <input type="number" id="override-wind" placeholder="Auto">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label>Load (kW)</label>
+            <input type="number" id="override-load" placeholder="Auto">
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-secondary" id="btn-clear-overrides">Clear All</button>
+          <button class="btn" id="btn-apply-overrides">Apply Injections</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUMN 3: LIVE REAL-TIME DATA INGESTION PANEL -->
+    <section class="card">
+      <div class="card-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--emerald);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        Live Real-Time Data Ingestion
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px;">
+        <div class="form-group" style="margin: 0;">
+          <label>Solar Gen (kW)</label>
+          <input type="number" id="live-solar" value="0" step="0.1" min="0">
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label>Wind Gen (kW)</label>
+          <input type="number" id="live-wind" value="0" step="0.1" min="0">
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label>Load Demand (kW)</label>
+          <input type="number" id="live-load" value="15" step="0.1" min="0">
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label>Grid Power (kW)</label>
+          <input type="number" id="live-grid" value="0" step="0.1" placeholder="+ Imp / - Exp">
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label>BESS Temp (°C)</label>
+          <input type="number" id="live-temp" value="25" step="0.5">
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label>BESS Current (A)</label>
+          <input type="number" id="live-current" value="0" step="0.1" placeholder="+ Chg / - Dis">
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label>Grid Status</label>
+          <select id="live-grid-status">
+            <option value="1">CONNECTED</option>
+            <option value="0">OUTAGE</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin: 0;">
+          <label>BESS SOC (%)</label>
+          <input type="number" id="live-soc" placeholder="Auto" min="0" max="100">
+        </div>
+      </div>
+      <button class="btn" id="btn-ingest-live" style="background: var(--emerald); color: #020617;">Ingest Live Telemetry</button>
+    </section>
+
+    <!-- COLUMN 4: MULTI-SECTION FILE REPLAY LOADER -->
+    <section class="card">
+      <div class="card-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--purple);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        Historical Replay Dataset Attachments
+      </div>
+
+      <div class="replay-status-bar">
+        <div>
+          <span style="font-size: 0.65rem; color: var(--text-secondary); display: block;">Replay Mode</span>
+          <span style="font-size: 0.75rem; font-weight: bold;" id="replay-state-indicator">SIMULATING</span>
+        </div>
+        <button class="btn" style="width: auto; padding: 6px 12px; font-size: 0.7rem;" id="btn-toggle-replay" disabled>Start Replay</button>
+      </div>
+
+      <div class="file-replay-grid">
+        <!-- Unified Master CSV Upload -->
+        <div class="replay-section-item" style="grid-column: span 2; border: 1px dashed var(--purple); padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+          <div class="replay-section-header">
+            <span style="font-weight: bold; color: var(--purple);">Upload Unified Master CSV</span>
+            <span class="replay-indicator simulated" id="badge-master">Multi-Asset</span>
+          </div>
+          <input type="file" accept=".csv" onchange="uploadSectionCSV('master', this.files[0])">
+        </div>
+
+        <!-- Solar Upload -->
+        <div class="replay-section-item">
+          <div class="replay-section-header">
+            <span>Solar PV CSV</span>
+            <span class="replay-indicator simulated" id="badge-solar">Simulated</span>
+          </div>
+          <input type="file" accept=".csv" onchange="uploadSectionCSV('solar', this.files[0])">
+        </div>
+
+        <!-- Wind Upload -->
+        <div class="replay-section-item">
+          <div class="replay-section-header">
+            <span>Wind Turbine CSV</span>
+            <span class="replay-indicator simulated" id="badge-wind">Simulated</span>
+          </div>
+          <input type="file" accept=".csv" onchange="uploadSectionCSV('wind', this.files[0])">
+        </div>
+
+        <!-- Battery BESS Upload -->
+        <div class="replay-section-item">
+          <div class="replay-section-header">
+            <span>Battery BESS CSV</span>
+            <span class="replay-indicator simulated" id="badge-battery">Simulated</span>
+          </div>
+          <input type="file" accept=".csv" onchange="uploadSectionCSV('battery', this.files[0])">
+        </div>
+
+        <!-- Inverter Upload -->
+        <div class="replay-section-item">
+          <div class="replay-section-header">
+            <span>Inverter / PCS CSV</span>
+            <span class="replay-indicator simulated" id="badge-inverter">Simulated</span>
+          </div>
+          <input type="file" accept=".csv" onchange="uploadSectionCSV('inverter', this.files[0])">
+        </div>
+
+        <!-- Load Upload -->
+        <div class="replay-section-item">
+          <div class="replay-section-header">
+            <span>Load Demand CSV</span>
+            <span class="replay-indicator simulated" id="badge-load">Simulated</span>
+          </div>
+          <input type="file" accept=".csv" onchange="uploadSectionCSV('load', this.files[0])">
+        </div>
+
+        <!-- Grid Upload -->
+        <div class="replay-section-item">
+          <div class="replay-section-header">
+            <span>Utility Grid CSV</span>
+            <span class="replay-indicator simulated" id="badge-grid">Simulated</span>
+          </div>
+          <input type="file" accept=".csv" onchange="uploadSectionCSV('grid', this.files[0])">
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 5. REAL-TIME CHARTS AND FORECAST TRENDS -->
+  <section class="card" style="margin-top: 24px; margin-bottom: 24px;">
+    <div class="card-title">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--blue);"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></svg>
+      Microgrid active load & generation trend analysis
+    </div>
+    
+    <div style="height: 220px; position: relative;">
+      <canvas id="liveTrendChart"></canvas>
+    </div>
+  </section>
+
+  <!-- 6. COMMUNICATION PROTOCOLS PANEL -->
+  <footer class="protocol-terminal">
+    <div class="terminal-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--emerald); box-shadow: 0 0 8px var(--emerald);"></span>
+        <span>COMMUNICATION PROTOCOL INTERFACE</span>
+      </div>
+      <div class="terminal-tabs">
+        <button class="terminal-tab-btn active" onclick="switchTerminalTab('can')">CAN BUS (BMS)</button>
+        <button class="terminal-tab-btn" onclick="switchTerminalTab('modbus')">MODBUS TCP (PCS)</button>
+        <button class="terminal-tab-btn" onclick="switchTerminalTab('opcua')">OPC UA NODES</button>
+        <button class="terminal-tab-btn" onclick="switchTerminalTab('iec')">IEC 61850</button>
+      </div>
+    </div>
+
+    <div class="terminal-body" id="protocol-body">
+      CAN ID: 0x18F009A1 | DATA: 32 0F 0E 7D F1 41 8A B3 (BMS Telemetry Stream)
+    </div>
+  </footer>
+  </div>
+
+  <!-- TAB: DATA SOURCES -->
+  <div id="tab-data-sources" class="tab-content" style="display: none;">
+    <div class="view-header">
+      <div class="view-title-group">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M3 5v6c0 1.66 4 3 9 3s9-1.34 9-3V5"></path><path d="M3 11v6c0 1.66 4 3 9 3s9-1.34 9-3v-6"></path></svg>
+        <h2>Data Acquisition Sources</h2>
+      </div>
+      <span class="active-channels-badge" id="active-channels-count">0 ACTIVE CHANNELS</span>
+    </div>
+    
+    <div class="assets-cards-grid">
+      <!-- Solar Card -->
+      <div class="asset-acquisition-card" id="card-solar">
+        <div class="asset-card-header">
+          <div class="asset-card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="M4.93 4.93l1.41 1.41"></path><path d="M17.66 17.66l1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="M6.34 17.66l-1.41 1.41"></path><path d="M19.07 4.93l-1.41 1.41"></path></svg>
+            <span>Solar Generation</span>
+          </div>
+          <div class="asset-status-indicator">
+            <span class="status-dot disconnected" id="solar-status-dot"></span>
+            <span class="status-text" id="solar-status-text">DISCONNECTED</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Protocol</label>
+          <select id="solar-protocol-select">
+            <option value="Sample CSV">Sample CSV</option>
+            <option value="MQTT">MQTT</option>
+            <option value="Modbus TCP">Modbus TCP</option>
+            <option value="Modbus RTU">Modbus RTU</option>
+            <option value="OPC-UA">OPC-UA</option>
+            <option value="REST API">REST API</option>
+          </select>
+        </div>
+        
+        <div class="channel-stats-grid">
+          <div class="stat-box">
+            <span class="stat-label">Sensors</span>
+            <span class="stat-val">8 Tags</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Active</span>
+            <span class="stat-val" id="solar-active-tags">0 Tags</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Data Rate</span>
+            <span class="stat-val" id="solar-data-rate">0.0 Hz</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Last Update</span>
+            <span class="stat-val" id="solar-last-update">Never</span>
+          </div>
+        </div>
+        
+        <div class="activity-bar-container" id="solar-activity-container" style="display: none; margin-top: 10px;">
+          <div class="activity-bar-fill"></div>
+        </div>
+        
+        <div class="card-actions-grid" id="solar-actions-container" style="margin-top: 10px;">
+          <button class="btn btn-connect" onclick="connectAssetBtn('solar')">Connect</button>
+        </div>
+      </div>
+
+      <!-- Wind Card -->
+      <div class="asset-acquisition-card" id="card-wind">
+        <div class="asset-card-header">
+          <div class="asset-card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.8 19.6A2 2 0 1 0 14 16H2"></path><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"></path><path d="M9.8 4.4A2 2 0 1 1 11 8H2"></path></svg>
+            <span>Wind Generation</span>
+          </div>
+          <div class="asset-status-indicator">
+            <span class="status-dot disconnected" id="wind-status-dot"></span>
+            <span class="status-text" id="wind-status-text">DISCONNECTED</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Protocol</label>
+          <select id="wind-protocol-select">
+            <option value="Sample CSV">Sample CSV</option>
+            <option value="MQTT">MQTT</option>
+            <option value="Modbus TCP">Modbus TCP</option>
+            <option value="Modbus RTU">Modbus RTU</option>
+            <option value="OPC-UA">OPC-UA</option>
+            <option value="REST API">REST API</option>
+          </select>
+        </div>
+        
+        <div class="channel-stats-grid">
+          <div class="stat-box">
+            <span class="stat-label">Sensors</span>
+            <span class="stat-val">8 Tags</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Active</span>
+            <span class="stat-val" id="wind-active-tags">0 Tags</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Data Rate</span>
+            <span class="stat-val" id="wind-data-rate">0.0 Hz</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Last Update</span>
+            <span class="stat-val" id="wind-last-update">Never</span>
+          </div>
+        </div>
+        
+        <div class="activity-bar-container" id="wind-activity-container" style="display: none; margin-top: 10px;">
+          <div class="activity-bar-fill"></div>
+        </div>
+        
+        <div class="card-actions-grid" id="wind-actions-container" style="margin-top: 10px;">
+          <button class="btn btn-connect" onclick="connectAssetBtn('wind')">Connect</button>
+        </div>
+      </div>
+
+      <!-- Battery Card -->
+      <div class="asset-acquisition-card" id="card-battery">
+        <div class="asset-card-header">
+          <div class="asset-card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
+            <span>Battery BESS</span>
+          </div>
+          <div class="asset-status-indicator">
+            <span class="status-dot disconnected" id="battery-status-dot"></span>
+            <span class="status-text" id="battery-status-text">DISCONNECTED</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Protocol</label>
+          <select id="battery-protocol-select">
+            <option value="Sample CSV">Sample CSV</option>
+            <option value="Direct BMS">Direct BMS</option>
+            <option value="MQTT">MQTT</option>
+            <option value="Modbus TCP">Modbus TCP</option>
+            <option value="OPC-UA">OPC-UA</option>
+            <option value="REST API">REST API</option>
+          </select>
+        </div>
+        
+        <div class="channel-stats-grid">
+          <div class="stat-box">
+            <span class="stat-label">Sensors</span>
+            <span class="stat-val">9 Tags</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Active</span>
+            <span class="stat-val" id="battery-active-tags">0 Tags</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Data Rate</span>
+            <span class="stat-val" id="battery-data-rate">0.0 Hz</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Last Update</span>
+            <span class="stat-val" id="battery-last-update">Never</span>
+          </div>
+        </div>
+        
+        <div class="activity-bar-container" id="battery-activity-container" style="display: none; margin-top: 10px;">
+          <div class="activity-bar-fill"></div>
+        </div>
+        
+        <div class="card-actions-grid" id="battery-actions-container" style="margin-top: 10px;">
+          <button class="btn btn-connect" onclick="connectAssetBtn('battery')">Connect</button>
+        </div>
+      </div>
+
+      <!-- Grid Card -->
+      <div class="asset-acquisition-card" id="card-grid">
+        <div class="asset-card-header">
+          <div class="asset-card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+            <span>Utility Grid</span>
+          </div>
+          <div class="asset-status-indicator">
+            <span class="status-dot disconnected" id="grid-status-dot"></span>
+            <span class="status-text" id="grid-status-text">DISCONNECTED</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Protocol</label>
+          <select id="grid-protocol-select">
+            <option value="Sample CSV">Sample CSV</option>
+            <option value="Modbus TCP">Modbus TCP</option>
+            <option value="MQTT">MQTT</option>
+            <option value="OPC-UA">OPC-UA</option>
+            <option value="REST API">REST API</option>
+            <option value="Modbus RTU">Modbus RTU</option>
+          </select>
+        </div>
+        
+        <div class="channel-stats-grid">
+          <div class="stat-box">
+            <span class="stat-label">Sensors</span>
+            <span class="stat-val">6 Tags</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Active</span>
+            <span class="stat-val" id="grid-active-tags">0 Tags</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Data Rate</span>
+            <span class="stat-val" id="grid-data-rate">0.0 Hz</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Last Update</span>
+            <span class="stat-val" id="grid-last-update">Never</span>
+          </div>
+        </div>
+        
+        <div class="activity-bar-container" id="grid-activity-container" style="display: none; margin-top: 10px;">
+          <div class="activity-bar-fill"></div>
+        </div>
+        
+        <div class="card-actions-grid" id="grid-actions-container" style="margin-top: 10px;">
+          <button class="btn btn-connect" onclick="connectAssetBtn('grid')">Connect</button>
+        </div>
+      </div>
+
+      <!-- Load Card -->
+      <div class="asset-acquisition-card" id="card-load">
+        <div class="asset-card-header">
+          <div class="asset-card-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--rose)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+            <span>Load Feeder</span>
+          </div>
+          <div class="asset-status-indicator">
+            <span class="status-dot disconnected" id="load-status-dot"></span>
+            <span class="status-text" id="load-status-text">DISCONNECTED</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Protocol</label>
+          <select id="load-protocol-select">
+            <option value="Sample CSV">Sample CSV</option>
+            <option value="Modbus TCP">Modbus TCP</option>
+            <option value="MQTT">MQTT</option>
+            <option value="OPC-UA">OPC-UA</option>
+            <option value="REST API">REST API</option>
+            <option value="Modbus RTU">Modbus RTU</option>
+          </select>
+        </div>
+        
+        <div class="channel-stats-grid">
+          <div class="stat-box">
+            <span class="stat-label">Sensors</span>
+            <span class="stat-val">6 Tags</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Active</span>
+            <span class="stat-val" id="load-active-tags">0 Tags</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Data Rate</span>
+            <span class="stat-val" id="load-data-rate">0.0 Hz</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Last Update</span>
+            <span class="stat-val" id="load-last-update">Never</span>
+          </div>
+        </div>
+        
+        <div class="activity-bar-container" id="load-activity-container" style="display: none; margin-top: 10px;">
+          <div class="activity-bar-fill"></div>
+        </div>
+        
+        <div class="card-actions-grid" id="load-actions-container" style="margin-top: 10px;">
+          <button class="btn btn-connect" onclick="connectAssetBtn('load')">Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: LIVE DISPLAY -->
+  <div id="tab-live-display" class="tab-content" style="display: none;">
+    <div class="view-header">
+      <div class="view-title-group">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="2" y1="14" x2="6" y2="14"></line><line x1="10" y1="8" x2="14" y2="8"></line><line x1="18" y1="16" x2="22" y2="16"></line></svg>
+        <h2>Live Acquisition Metrics</h2>
+      </div>
+      <span class="active-channels-badge">WebSocket Stream</span>
+    </div>
+    
+    <div class="assets-cards-grid">
+      <!-- Solar Live Display Card -->
+      <div class="asset-acquisition-card" id="live-card-solar"></div>
+      
+      <!-- Wind Live Display Card -->
+      <div class="asset-acquisition-card" id="live-card-wind"></div>
+      
+      <!-- Battery Live Display Card -->
+      <div class="asset-acquisition-card" id="live-card-battery"></div>
+      
+      <!-- Grid Live Display Card -->
+      <div class="asset-acquisition-card" id="live-card-grid"></div>
+      
+      <!-- Load Live Display Card -->
+      <div class="asset-acquisition-card" id="live-card-load"></div>
+    </div>
+  </div>
+
+
+  <!-- 7. HMI BLOCK DETAILS FACEPLATE MODAL -->
+  <div id="faceplate-overlay" class="faceplate-overlay" onclick="closeFaceplate()"></div>
+  <div id="faceplate-modal" class="faceplate-modal glass-modal">
+    <div class="faceplate-header">
+      <div class="faceplate-title-group">
+        <span id="faceplate-icon-container"></span>
+        <h3 id="faceplate-title">Component Details</h3>
+      </div>
+      <button class="faceplate-close" onclick="closeFaceplate()">&times;</button>
+    </div>
+    <div class="faceplate-body">
+      <div class="faceplate-status-badge" id="faceplate-status-badge">STATUS: NOMINAL</div>
+      
+      <div class="faceplate-metrics-container">
+        <!-- Real-time metrics grid -->
+        <div class="faceplate-grid" id="faceplate-grid-content">
+          <!-- Dynamic details injected by JavaScript -->
+        </div>
+      </div>
+      
+      <div class="faceplate-details-card">
+        <h4 style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">System Asset Registry</h4>
+        <div class="faceplate-asset-grid" id="faceplate-asset-content">
+          <!-- Asset details -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+</html>
