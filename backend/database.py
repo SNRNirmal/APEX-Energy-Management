@@ -10,7 +10,7 @@ POSTGRES_URI = os.getenv("POSTGRES_URI")
 MONGO_URI = os.getenv("MONGO_URI")
 INFLUXDB_URI = os.getenv("INFLUXDB_URI")
 
-DB_FILE = "microgrid.db"
+DB_FILE = os.environ.get("APEX_DB_FILE") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "microgrid.db")
 
 class DatabaseManager:
     def __init__(self):
