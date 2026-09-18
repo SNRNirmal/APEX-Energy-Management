@@ -215,6 +215,7 @@ class MicrogridSimulator:
                 "Battery_SOH": round(self.battery_soh, 4),
                 "Battery_Voltage": round(self.battery_voltage, 2),
                 "Battery_Current": 0.0,
+                "Battery_Power": 0.0,
                 "Battery_Temperature": round(self.battery_temp, 2)
             }
         # Limit power to battery physical rating
@@ -286,6 +287,7 @@ class MicrogridSimulator:
             "Battery_SOH": round(self.battery_soh, 4),
             "Battery_Voltage": round(self.battery_voltage, 2),
             "Battery_Current": round(self.battery_current, 2),
+            "Battery_Power": round(actual_power, 2),
             "Battery_Temperature": round(self.battery_temp, 2),
             "Battery_Fan_Status": self.battery_fan_status
         }

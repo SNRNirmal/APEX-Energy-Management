@@ -341,6 +341,7 @@ def run_microgrid_loop():
                     "Battery_SOH": soh,
                     "Battery_Voltage": volt,
                     "Battery_Current": curr,
+                    "Battery_Power": round(replayed_batt_pwr, 2),
                     "Battery_Temperature": temp
                 }
             else:
@@ -349,6 +350,7 @@ def run_microgrid_loop():
             
             if not simulator.battery_enabled:
                 battery_data["Battery_Current"] = 0.0
+                battery_data["Battery_Power"] = 0.0
             
             # Step 4. Grid Update: Grid voltage, power parameters OR use Grid Replay dataset
             grid_data = {}
