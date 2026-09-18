@@ -99,9 +99,9 @@ flowchart TD
         REST_WS["FastAPI REST & 1Hz WebSocket Server"]
     end
 
-    subgraph TEST_LAYER ["8. INTEGRATE & STRESS TEST — Regression & Quality Assurance"]
-        MasterTestRunner["Master Regression Suite<br/>(76 Tests, 0 Failures, 0 Errors)"]
-        StressHarness["Scenario & Fault Injection Tests<br/>(7 Operating Scenarios, Outage Islanding)"]
+    subgraph TEST_LAYER ["8. INTEGRATE & STRESS TEST — System Verification"]
+        MasterTestRunner["Dataset Physics Verification<br/>(2,016 Steps, 100% Balance Pass)"]
+        StressHarness["Scenario & Fault Verification<br/>(7 Operating Scenarios, Outage Islanding)"]
     end
 
     TSData --> Simulator
@@ -321,7 +321,7 @@ Directly verified from `backend/evaluation.py` and `backend/phase7_validation_re
 The platform provides two operator interfaces tailored for industrial operations:
 
 ### 1. Modern Interactive SCADA Dashboard (`frontend/`)
-Built with **React 19**, **Vite 8**, **Tailwind CSS**, **Recharts**, and **Lucide React**:
+Built with **React 19**, **Vite 8**, **Tailwind CSS**, **Recharts**, **Lucide React**, and **Framer Motion**:
 * **Energy KPI Header Bar:** Live readouts for Solar PV ($kW$), Wind ($kW$), Total Renewables ($kW$), Total Factory Load ($kW$), Battery SOC ($20–95\%$), Grid Import ($kW$), Grid Export ($kW$), and Curtailment ($kW$).
 * **Interactive 7-Day Scenario Switcher:** Tab bar allowing operators to navigate Monday through Sunday, displaying scenario badges, weather summaries, and tariff states.
 * **Animated Energy Flow Busbar:** Visual power flow diagram illustrating real-time energy directions and magnitudes between Solar, Wind, Battery, Grid, and Factory machines.
@@ -338,16 +338,31 @@ Built with **React 19**, **Vite 8**, **Tailwind CSS**, **Recharts**, and **Lucid
 
 ---
 
+## Beyond the APEX Decision Pipeline: Platform Capabilities
+
+The FastAPI app's own title — **"Industrial EMS + SCADA Controller API"** — reflects that `backend/main.py` is a superset of the 8-stage APEX pipeline described above. The following are real, working code paths in this repository that sit outside that specific pipeline but are part of the same running application:
+
+* **Mock Role-Based Auth:** `/api/auth/login` issues a mock bearer token for `admin`/`operator`/`engineer`/`viewer` (password = username), gating the control, settings, and alarm-management endpoints. This is a demonstration scheme, not a production identity provider.
+* **Alarm Management:** Threshold-based alarm detection (`ems.detect_alarms`) with acknowledge/clear/"repair" workflows against a SQLite alarm journal.
+* **Digital Twin Asset Management:** Per-asset (solar/wind/battery/grid/load) connect/disconnect/start/stop/protocol endpoints simulating a live acquisition layer, plus `/api/twin/simulate-failure` for fault injection (fan failure, battery thermal runaway, inverter fault).
+* **CSV Dataset Replay & Upload:** Any telemetry section can be driven from an uploaded CSV via `/api/upload-dataset/{section}`, switching the live simulation loop from its built-in physics model to replayed data.
+* **RL-Assisted BESS Dispatch:** An `OPTIMIZED` simulation mode applies a Q-learning-style offset (`ems.select_rl_action` / `update_rl_policy`) to battery dispatch on top of the rule-based EMS, using a cost-plus-battery-wear reward signal.
+* **Protocol Emulation:** In-process simulators for Modbus TCP holding registers, an OPC UA node tree, CAN Bus BMS frame encoding, and IEC 61850 logical nodes (`backend/protocols.py`) — useful for demonstrating SCADA integration concepts, but not a substitute for real field-bus drivers or hardware.
+* **Predictive Maintenance & Carbon Analytics:** `/api/predictive-maintenance` and `/api/carbon-analytics` derive asset health scores and CO₂/renewable-share estimates from live telemetry and the historian.
+
+---
+
 ## Technical Stack
 
 The platform is constructed using modern, verified technologies:
 
-* **Backend Framework:** Python 3.11, FastAPI, Uvicorn (ASGI server), Starlette, Pydantic (data validation)
-* **Machine Learning & Analytics:** Scikit-Learn (Gradient Boosting Regressor, Multi-Layer Perceptron), NumPy, SciPy
-* **Persistence & Database:** SQLite 3 (SCADA Historian, Alarm Journal, Dynamic Configuration)
-* **Frontend Application:** React 19, Vite 8, Tailwind CSS, Recharts (time-series charting), Lucide React (industrial icons)
-* **Protocol & Telemetry Simulation:** Native Python codecs (Modbus TCP, CAN Bus, IEC 61850 packet simulation)
-* **Testing & Quality Assurance:** Python standard `unittest`, FastAPI `TestClient`
+* **Backend Framework:** Python 3.12, FastAPI, Uvicorn (ASGI server), Starlette, Pydantic (data validation)
+* **Machine Learning & Analytics:** Scikit-Learn (Gradient Boosting Regressor, Multi-Layer Perceptron), NumPy
+* **Persistence & Database:** SQLite 3 (SCADA Historian, Alarm Journal, Dynamic Configuration). `backend/requirements.txt` also lists SQLAlchemy, `psycopg2-binary`, `pymongo`, and `influxdb-client` for optional/future backend integrations — none are currently wired into `main.py`'s active data path, which is SQLite-only.
+* **Messaging & Telemetry Transport:** `websockets` (native FastAPI WebSocket), `paho-mqtt` (backs the in-process `MQTTBrokerMock`), `python-multipart` (CSV dataset upload endpoint)
+* **Frontend Application:** React 19, Vite 8, Tailwind CSS 3, Recharts (time-series charting), Lucide React (industrial icons), Framer Motion (UI animation)
+* **Protocol & Telemetry Simulation:** In-process Python mocks (Modbus TCP register map, OPC UA node tree, CAN Bus BMS frame encoder, IEC 61850 logical nodes, MQTT broker) — simulated, not live field-bus connections
+* **Testing & Quality Assurance:** Not present in the current snapshot of this repository — see *Testing & Performance Validation* below
 
 ---
 
@@ -372,16 +387,7 @@ APEX-Energy/
 │   ├── phase7_validation_report.json         # Automated verification and throughput report
 │   ├── microgrid.db                          # Authoritative SCADA historian DB (73k+ records)
 │   ├── requirements.txt                      # Backend Python dependencies
-│   ├── pyproject.toml                        # Backend packaging configuration
-│   ├── run_all_tests.py                      # Master regression test runner
-│   ├── test_apex_dataset.py                  # Dataset schema and First Law balance tests
-│   ├── test_apex_forecast.py                 # Renewable forecast models and surge detection tests
-│   ├── test_apex_decision_engine.py          # Machine constraints and 9-tier priority tests
-│   ├── test_apex_verification.py             # Physical boundary and thermodynamic balance tests
-│   ├── test_apex_evaluation.py               # Independent baseline benchmark comparison tests
-│   ├── test_backend.py                       # Modbus, CAN, and IEC 61850 protocol codec tests
-│   ├── test_apex_dashboard_api.py            # Dashboard API contract compliance tests
-│   └── test_apex_phase7_stress.py            # Master pipeline stress and fault injection tests
+│   └── pyproject.toml                        # Backend packaging configuration
 ├── frontend/                                 # React SCADA HMI dashboard
 │   ├── src/
 │   │   ├── components/
@@ -429,21 +435,71 @@ Telemetry, alarm logs, and microgrid settings are persisted in **`backend/microg
 
 ## API Documentation
 
-The backend exposes a structured REST API and WebSocket stream:
+`backend/main.py` names its FastAPI app **"Industrial EMS + SCADA Controller API"** — the APEX Phase 2–6 endpoints below sit alongside a much larger live SCADA simulator (auth, alarms, asset connection management, dataset replay, protocol emulation). The full, verified endpoint set:
 
+### APEX orchestration pipeline (Phases 2–6)
 | Endpoint | Method | Description |
 | :--- | :---: | :--- |
-| `/api/status` | `GET` | Returns SCADA server health, active simulation loop state, and historian status. |
-| `/api/forecast/renewable` | `GET` | Returns 180-minute rolling predictions and detected renewable surge windows. |
-| `/api/decision/evaluate` | `GET` | Evaluates real-time 9-tier priority dispatch, machine states, and reasoning text. |
-| `/api/decision/candidates` | `GET` | Returns ranked and scored candidate operating windows for Machine C. |
-| `/api/verification/verify` | `POST` | Validates First Law energy balance and constraints for an arbitrary power allocation. |
-| `/api/verification/dataset` | `GET` | Executes a batch verification audit across the entire 2,016-step dataset. |
-| `/api/verification/status` | `GET` | Evaluates physics verification on current live SCADA telemetry. |
-| `/api/evaluation/compare` | `GET` | Returns cumulative Baseline vs. APEX benchmark comparison and daily breakdowns. |
-| `/api/evaluation/kpis` | `GET` | Returns summary KPI metrics for UI card rendering. |
-| `/api/scenario/details` | `GET` | Returns 24-hour trajectories (48 points @ 30-min), metadata, and representative decisions. |
-| `/ws` | `WS` | Bi-directional WebSocket streaming live SCADA telemetry at 1 Hz. |
+| `/api/forecast/renewable` | `GET` | 180-minute rolling solar/wind forecast and surge-window detection. |
+| `/api/decision/evaluate` | `GET` | Evaluates the 9-tier priority dispatch decision and reasoning text for a timestep. |
+| `/api/decision/candidates` | `GET` | Ranked, scored candidate operating windows for a machine (default `Machine_C`). |
+| `/api/verification/verify` | `POST` | Validates First Law energy balance and physical bounds for an arbitrary allocation. |
+| `/api/verification/dataset` | `GET` | Batch physics verification across the full 2,016-step dataset. |
+| `/api/verification/status` | `GET` | Physics verification of the current live telemetry snapshot. |
+| `/api/evaluation/compare` | `GET` | Cumulative Baseline vs. APEX benchmark comparison and daily breakdowns. |
+| `/api/evaluation/kpis` | `GET` | Summary KPI cards for UI consumption. |
+| `/api/scenario/details` | `GET` | 24-hour trajectory (48 points @ 30-min) and representative decision for `day_index=0-6`. |
+
+### Live SCADA simulation & telemetry
+| Endpoint | Method | Description |
+| :--- | :---: | :--- |
+| `/api/status` | `GET` | Server health, simulation mode, replay state, and per-asset enable flags. |
+| `/api/tags` | `GET` | Latest raw telemetry tag snapshot. |
+| `/api/historical` | `GET` | Historian query (`limit` param) over `microgrid.db`. |
+| `/api/control` | `POST` | Sets simulation mode and per-asset manual overrides/enables. *(admin/engineer)* |
+| `/api/live-data` | `POST` | Ingests externally supplied live telemetry; switches simulator to `LIVE` mode. *(admin/operator/engineer)* |
+| `/api/forecast` | `GET` | Simple 24-hour sinusoidal-model forecast. |
+| `/api/forecast-extended` | `GET` | 24-hour forward simulation combining ML load/solar/wind forecasts with a dispatch model. |
+| `/api/carbon-analytics` | `GET` | CO₂-avoided and renewable-share estimates derived from the historian. |
+| `/api/predictive-maintenance` | `GET` | Asset health scores from `ai_models.maintenance_suite`. |
+| `/ws` | `WS` | WebSocket streaming live telemetry, alarms, asset state, and protocol frames (~1 Hz). |
+
+### Auth, alarms & settings
+| Endpoint | Method | Description |
+| :--- | :---: | :--- |
+| `/api/auth/login` | `POST` | Mock login (`admin`/`operator`/`engineer`/`viewer`, password = username) issuing a mock bearer token. |
+| `/api/alarms` | `GET` | Active and recent (last 50) alarm log entries. |
+| `/api/alarms/acknowledge` | `POST` | Acknowledges an alarm by ID. *(admin/operator/engineer)* |
+| `/api/alarms/clear` | `POST` | Clears an alarm by ID. *(admin/operator/engineer)* |
+| `/api/alarms/repair` | `POST` | Applies a scripted "physical self-repair" tied to an alarm's root cause. *(admin/operator/engineer)* |
+| `/api/settings` | `GET`/`POST` | Reads/updates BESS SOC limits, TOU tariff windows, export toggle, optimization mode. *(POST: admin)* |
+
+### Asset connection management (digital twin acquisition layer)
+| Endpoint | Method | Description |
+| :--- | :---: | :--- |
+| `/api/assets/status` | `GET` | Connection/collection state for solar, wind, battery, grid, and load "assets". |
+| `/api/assets/{asset}/connect` | `POST` | Simulates connecting an asset's sensor feed. *(admin/operator/engineer)* |
+| `/api/assets/{asset}/disconnect` | `POST` | Disconnects an asset's sensor feed. *(admin/operator/engineer)* |
+| `/api/assets/{asset}/start`, `/stop` | `POST` | Starts/stops data collection for a connected asset. *(admin/operator/engineer)* |
+| `/api/assets/{asset}/protocol` | `POST` | Sets the acquisition protocol label for an asset. *(admin/operator/engineer)* |
+| `/api/assets/predictions` | `GET` | Per-asset next-step ML predictions with mock confidence scores. |
+| `/api/twin/simulate-failure` | `POST` | Injects/clears a digital-twin fault (fan failure, battery runaway, inverter fault). *(admin/engineer)* |
+
+### Dataset replay, upload & export
+| Endpoint | Method | Description |
+| :--- | :---: | :--- |
+| `/api/upload-dataset/{section}` | `POST` | Uploads a CSV to replay for a section (`solar`/`wind`/`battery`/`inverter`/`load`/`grid`/`master`); switches to `REPLAY` mode. |
+| `/api/download-sample/{section}` | `GET` | Downloads the bundled sample CSV for a section. |
+| `/api/toggle-replay` | `POST` | Toggles replay mode (requires a dataset already uploaded). |
+| `/api/export/grid-exports` | `GET` | Streams historian rows where the grid was exporting, as CSV. |
+| `/api/export/full-telemetry` | `GET` | Streams the full historian table as CSV. |
+
+### Protocol emulation
+| Endpoint | Method | Description |
+| :--- | :---: | :--- |
+| `/api/protocols` | `GET` | Current Modbus TCP register map, OPC UA node tree, CAN Bus BMS frame, and IEC 61850 node values. |
+
+All simulated field-bus protocols (Modbus TCP, OPC UA, CAN Bus, IEC 61850, MQTT) are **in-process Python mocks** in `backend/protocols.py` — there is no real field-bus transport or hardware in the loop, and the "auth" scheme is a mock bearer token for role demonstration, not a production identity provider.
 
 Interactive OpenAPI documentation is accessible at `http://localhost:8000/docs` (Swagger UI) and `http://localhost:8000/redoc`.
 
@@ -452,7 +508,7 @@ Interactive OpenAPI documentation is accessible at `http://localhost:8000/docs` 
 ## Installation & Setup
 
 ### Prerequisites
-* **Python:** Version 3.11 or higher
+* **Python:** Version 3.12 or higher (pinned via `backend/.python-version`; `backend/pyproject.toml` requires `>=3.12`)
 * **Node.js:** Version 18 or higher (with `npm`)
 
 ### 1. Install Backend Dependencies
@@ -491,35 +547,24 @@ With the backend server running, open `index.html` from the repository root dire
 
 ---
 
-## Testing & Performance Validation
+## System Verification & Performance Validation
 
-### Execute Master Regression Test Suite
+### 1. Automated First Law Dataset Verification
+Verify the First Law of Thermodynamics and all operational constraints across the complete 2,016-step dataset using the verification engine endpoint:
 ```bash
-python backend/run_all_tests.py
+curl http://localhost:8000/api/verification/dataset
 ```
+* Audits every 5-minute timestep for thermodynamic conservation ($|\text{Supply} - \text{Demand}| \le 0.001\text{ kW}$), non-negative power flows, BESS limits, and production constraints.
+* Verified result: 2,016 / 2,016 timesteps passed ($100.0\%$ compliance).
 
-**Verified Test Results:**
-```text
-======================================================================
-SUMMARY:
-Total Tests Run: 76
-Failures:       0
-Errors:         0
-Status:         SUCCESS / PASS
-======================================================================
+### 2. Live SCADA Physics Health Check
+Query live operational physics status:
+```bash
+curl http://localhost:8000/api/verification/status
 ```
+* Evaluates current microgrid telemetry against the 10-point constraint audit.
 
-The 76 tests span eight dedicated test modules:
-* `test_apex_dataset.py` (9 tests): Validates dataset schema, 2,016 timesteps, First Law balance, and zero-null integrity.
-* `test_apex_forecast.py` (7 tests): Validates chronological train/test separation, zero lookahead leakage, model fitting, and surge detection.
-* `test_apex_decision_engine.py` (7 tests): Validates Machine A continuous protection, Machine C deadlines, candidate scoring, and 9-tier hierarchy.
-* `test_apex_verification.py` (9 tests): Validates First Law balance equation, non-negative flows, BESS limits, and islanding isolation.
-* `test_apex_evaluation.py` (9 tests): Validates independent baseline evaluation, net cost savings, and curtailment reduction.
-* `test_backend.py` (14 tests): Validates Modbus TCP, CAN Bus, and IEC 61850 protocol codecs, SQLite historian, and subsystem isolation.
-* `test_apex_dashboard_api.py` (8 tests): Validates FastAPI contract compliance for all endpoints consumed by the UI.
-* `test_apex_phase7_stress.py` (13 tests): Validates end-to-end data pipeline, all 7 operating scenarios, BESS boundary limits, and fault injection.
-
-### Build Frontend Production Bundle
+### 3. Build Frontend Production Bundle
 ```bash
 cd frontend
 npm run build

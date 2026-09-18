@@ -88,17 +88,22 @@ Once environment variables are detected by the backend, the `database.py` adapte
 
 ---
 
-## 5. Verification & Tests
+## 5. System Health & Verification
 
-To execute unit tests verifying the physical models, state machines, and protocol mappings:
+To verify that the microgrid simulation, physics verification layer, and API endpoints are healthy and operational:
 
-1. Navigate to the backend directory:
+1. Ensure the backend server is running:
    ```bash
-   cd e:/scada/backend
+   python -m uvicorn main:app --host 0.0.0.0 --port 8000
    ```
 
-2. Run tests using Python's standard unittest runner:
+2. Query the live SCADA health status:
    ```bash
-   py -m unittest test_backend.py
+   curl http://localhost:8000/api/status
    ```
-   Verify that all test cases pass successfully.
+
+3. Query the physics verification status to confirm First Law energy conservation:
+   ```bash
+   curl http://localhost:8000/api/verification/status
+   ```
+   Confirm that `status` returns `"PASS"` and balance error is within tolerance ($\le 0.001\text{ kW}$).
